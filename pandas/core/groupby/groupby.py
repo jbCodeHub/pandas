@@ -1670,6 +1670,67 @@ class GroupBy(BaseGroupBy[FrameOrSeries]):
 
     @final
     @Substitution(name="groupby")
+    def kurtosis(self, how: str = 'Fisher', numeric_only: bool = True):
+        """
+            Compute kurtosis of groups, excluding missing values.
+            Kurtosis is defined as the fourth central moment divided
+            by the square of the variance.
+
+            Parameters
+            ----------
+            method: str
+                'Fisher' or 'Pearson' kurtosis
+            numeric_only: bool
+                Only numeric values
+
+            Returns
+            -------
+            Series or DataFrame
+                kurtosis values within each group.
+
+        """
+        def kurtosis_(obj: FrameOrSeries, axis: int = 1):
+            def kurtosis(x: Series) -> float:
+                """
+                    Compute the kurtosis of the pandas.Series, excluding missing values.
+
+                    Parameters
+                    ----------
+                    pandas.Series :
+                        Series from which the kurtosis is calculated
+
+                    Returns
+                    -------
+                    float
+                        kurtosis
+                """
+
+                x = x.dropna(inplace=False)
+                if not len(x):
+                    return None
+
+                if how == 'Fisher':
+                    return x.kurtosis()
+                elif how == 'Pearson':
+                    return x.kurtosis() - 3
+                else:
+                    raise ValueError(f'{how} is not a valid argument')
+
+            if isinstance(obj, DataFrame):
+                return obj.apply(kurtosis, axis=axis)
+            elif isinstance(obj, Series):
+                return kurtosis(obj)
+            else:
+                raise TypeError(type(obj))
+
+        return self._agg_general(
+            numeric_only=numeric_only,
+            alias="kurtosis",
+            npfunc=kurtosis_,
+        )
+
+    @final
+    @Substitution(name="groupby")
     @Appender(_common_see_also)
     def size(self) -> FrameOrSeriesUnion:
         """

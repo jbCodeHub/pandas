@@ -397,6 +397,7 @@ class BaseGrouper:
             "first": "group_nth",
             "last": "group_last",
             "ohlc": "group_ohlc",
+            "kurtosis": "kurtosis"
         },
         "transform": {
             "cumprod": "group_cumprod",
