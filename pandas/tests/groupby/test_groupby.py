@@ -2189,3 +2189,64 @@ def test_groupby_mean_duplicate_index(rand_series_with_duplicate_datetimeindex):
     result = dups.groupby(level=0).mean()
     expected = dups.groupby(dups.index).mean()
     tm.assert_series_equal(result, expected)
+
+def test_groupby_aggregateby_count_mean_kurtosis():
+    df = pd.DataFrame({'bird':['Falcon', 'Falcon', 'Falcon', 'Falcon',
+                              'Parrot', 'Parrot', 'Parrot', 'Parrot'],
+                       'value': [390., 350.,390., 350.,
+                                 30., 20., 30., 20.]})
+    result = df.groupby('bird').aggregate({'value': ['count', 'mean','kurtosis']})
+    expected = np.array([[4,370.0,-6.0],[4,25.0,-6.0]])
+    numpyresult = result.to_numpy()
+    tm.assert_numpy_array_equal(numpyresult,expected)
+
+def test_groupby_aggregateby_kurtosis():
+    df = pd.DataFrame({'bird':['Falcon', 'Falcon', 'Falcon', 'Falcon',
+                              'Parrot', 'Parrot', 'Parrot', 'Parrot'],
+                       'value': [390., 350.,390., 350.,
+                                 30., 20., 30., 20.]})
+    result = df.groupby('bird').aggregate({'value': ['kurtosis']})
+    expected = np.array([[-6.0],[-6.0]])
+    numpyresult = result.to_numpy()
+    tm.assert_numpy_array_equal(numpyresult, expected)
+
+def test_groupby_kurtosis_fisher():
+    df = pd.DataFrame({'bird':['Falcon', 'Falcon', 'Falcon', 'Falcon',
+                              'Parrot', 'Parrot', 'Parrot', 'Parrot'],
+                       'value': [390., 350.,390., 350.,
+                                 30., 20., 30., 20.]})
+    result = df.groupby('bird').kurtosis()
+    numpyresult = result.to_numpy()
+    expected = np.array([[-6.0],[-6.0]])
+    tm.assert_numpy_array_equal(numpyresult,expected)
+
+def test_groupby_kurtosis_pearson():
+    df = pd.DataFrame({'bird':['Falcon', 'Falcon', 'Falcon', 'Falcon',
+                              'Parrot', 'Parrot', 'Parrot', 'Parrot'],
+                       'value': [390., 350.,390., 350.,
+                                 30., 20., 30., 20.]})
+    result = df.groupby('bird').kurtosis(how="Pearson")
+    expected = np.array([[-9.0],[-9.0]])
+    numpyresult = result.to_numpy()
+    tm.assert_numpy_array_equal(numpyresult,expected)
+
+def test_groupby_kurtosis_exception():
+    df = pd.DataFrame({'bird':['Falcon', 'Falcon', 'Falcon', 'Falcon',
+                              'Parrot', 'Parrot', 'Parrot', 'Parrot'],
+                       'value': [390., 350.,390., 350.,
+                                 30., 20., 30., 20.]})
+    msg = 'error is not a valid argument'
+    with pytest.raises(ValueError, match=msg):
+        result = df.groupby('bird').kurtosis(how="error").to_numpy()
+
+def test_groupby_kurtosis_empty():
+    df = pd.DataFrame({'bird':[],
+                       'value': []})
+    result = df.groupby('bird').aggregate({'value':['count','mean','kurtosis']}).to_numpy()
+    result1 = df.groupby('bird').kurtosis(how='Fisher').to_numpy()
+    result2 = df.groupby('bird').kurtosis(how="Pearson").to_numpy()
+    expected = np.array([]).reshape(0,3)
+    expected1 = np.array([]).reshape(0,1)
+    tm.assert_numpy_array_equal(result1, expected1)
+    tm.assert_numpy_array_equal(result2, expected1)
+    tm.assert_numpy_array_equal(result,expected)
